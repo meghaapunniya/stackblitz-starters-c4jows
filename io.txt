@@ -1,0 +1,21 @@
+========================== Model A: Turn 1 ================================
+
+Input:
+N/A
+
+Output:
+UI looks decent. 
+Need some margins b/w the Input fields inside the modal.
+Toggle status button is not working 
+
+========================== Model B: Turn 1 ================================
+
+Input:
+N/A
+
+Output:
+Input fields are not aligned at all. 
+There are no margins b/w elements inside the milestone card 
+add task, mark complete buttons are not working 
+shows NaN on the progress bar.
+UI is not appealing.
