@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Project Milestone Tracker</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .milestone-card {
+        margin: 10px;
+        padding: 10px;
+      }
+      .progress {
+        margin-top: 10px;
+      }
+      .task-done {
+        text-decoration: line-through;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center">Milestone Tracker</h1>
+      <!-- Milestone Creation Form -->
+      <form id="milestoneForm" class="mb-4">
+        <input type="text" id="title" placeholder="Milestone Title" required />
+        <textarea id="description" placeholder="Description"></textarea>
+        <input type="date" id="dueDate" required />
+        <button type="submit" class="btn btn-primary">Add Milestone</button>
+      </form>
+
+      <!-- Milestones Display -->
+      <div id="milestones"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        const milestones = JSON.parse(
+          sessionStorage.getItem('milestones') || '[]'
+        );
+
+        function renderMilestones() {
+          $('#milestones').empty();
+          milestones.forEach((milestone, index) => {
+            const progress = milestone.tasks
+              ? (milestone.tasks.filter((t) => t.status === 'done').length /
+                  milestone.tasks.length) *
+                100
+              : 0;
+            const card = `
+            <div class="card milestone-card">
+                <div class="card-body">
+                    <h5 class="card-title">${milestone.title}</h5>
+                    <p class="card-text">${milestone.description}</p>
+                    <p>Due: ${milestone.dueDate}</p>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: ${progress}%" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100">${Math.round(
+              progress
+            )}%</div>
+                    </div>
+                    <button onclick="toggleMilestone(${index})" class="btn btn-sm ${
+              milestone.completed ? 'btn-secondary' : 'btn-success'
+            }">${
+              milestone.completed ? 'Mark Incomplete' : 'Mark Complete'
+            }</button>
+                    <div>
+                        <h6>Tasks:</h6>
+                        <ul id="tasks-${index}"></ul>
+                        <input type="text" id="taskName-${index}" placeholder="New Task">
+                        <button onclick="addTask(${index})" class="btn btn-sm btn-info">Add Task</button>
+                    </div>
+                </div>
+            </div>`;
+            $('#milestones').append(card);
+            if (milestone.tasks) {
+              milestone.tasks.forEach((task) => {
+                $(`#tasks-${index}`).append(
+                  `<li class="${task.status}">${task.name} - ${task.priority} <button onclick="toggleTask(${index}, ${task.taskId})">Toggle</button></li>`
+                );
+              });
+            }
+          });
+          checkReminders();
+        }
+
+        function addMilestone(title, description, dueDate) {
+          milestones.push({
+            title,
+            description,
+            dueDate,
+            completed: false,
+            milestoneId: Date.now(),
+            tasks: [],
+          });
+          sessionStorage.setItem('milestones', JSON.stringify(milestones));
+          renderMilestones();
+        }
+
+        $('#milestoneForm').on('submit', function (e) {
+          e.preventDefault();
+          addMilestone(
+            $('#title').val(),
+            $('#description').val(),
+            $('#dueDate').val()
+          );
+          this.reset();
+        });
+
+        function toggleMilestone(index) {
+          milestones[index].completed = !milestones[index].completed;
+          sessionStorage.setItem('milestones', JSON.stringify(milestones));
+          renderMilestones();
+        }
+
+        function addTask(milestoneIndex) {
+          const taskName = $(`#taskName-${milestoneIndex}`).val();
+          if (taskName) {
+            milestones[milestoneIndex].tasks.push({
+              name: taskName,
+              status: 'pending',
+              priority: 'medium',
+              taskId: Date.now(),
+            });
+            sessionStorage.setItem('milestones', JSON.stringify(milestones));
+            renderMilestones();
+          }
+        }
+
+        function toggleTask(milestoneIndex, taskId) {
+          const task = milestones[milestoneIndex].tasks.find(
+            (t) => t.taskId === taskId
+          );
+          task.status = task.status === 'done' ? 'pending' : 'done';
+          sessionStorage.setItem('milestones', JSON.stringify(milestones));
+          renderMilestones();
+        }
+
+        function checkReminders() {
+          const now = new Date();
+          milestones.forEach((milestone) => {
+            if (!milestone.completed) {
+              const due = new Date(milestone.dueDate);
+              if (due - now <= 1000 * 60 * 60 * 24 && due > now) {
+                // 24 hours before due date
+                alert(`Reminder: Milestone '${milestone.title}' is due soon!`);
+              }
+            }
+          });
+        }
+
+        // Initial render
+        renderMilestones();
+      });
+    </script>
+  </body>
+</html>

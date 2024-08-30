@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Milestone Tracker</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      .milestone-completed {
+        background-color: #d1e7dd;
+      }
+      .milestone-in-progress {
+        background-color: #fff3cd;
+      }
+      .task-completed {
+        text-decoration: line-through;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Project Milestone Tracker</h1>
+      <button
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#milestoneModal"
+      >
+        Add Milestone
+      </button>
+      <div id="milestones-container"></div>
+
+      <!-- Milestone Modal -->
+      <div class="modal fade" id="milestoneModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add Milestone</h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <form id="milestone-form">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="milestone-title"
+                  placeholder="Title"
+                />
+                <textarea
+                  class="form-control"
+                  id="milestone-description"
+                  placeholder="Description"
+                ></textarea>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="milestone-due-date"
+                />
+                <button type="submit" class="btn btn-success">
+                  Save Milestone
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const milestonesContainer = document.getElementById(
+          'milestones-container'
+        );
+        const milestoneForm = document.getElementById('milestone-form');
+        let milestones = JSON.parse(sessionStorage.getItem('milestones')) || [];
+
+        function renderMilestones() {
+          milestonesContainer.innerHTML = '';
+          milestones.forEach((milestone, index) => {
+            const milestoneHTML = `
+                <div class="card mb-2 ${
+                  milestone.status === 'completed'
+                    ? 'milestone-completed'
+                    : 'milestone-in-progress'
+                }">
+                    <div class="card-body">
+                        <h5 class="card-title">${milestone.title}</h5>
+                        <p class="card-text">${milestone.description}</p>
+                        <p>Due: ${milestone.dueDate}</p>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: ${calculateProgress(
+                              milestone.tasks
+                            )}%;"></div>
+                        </div>
+                        <button class="btn btn-info" onclick="toggleMilestoneStatus(${index})">Toggle Status</button>
+                        <ul id="tasks-list-${index}"></ul>
+                    </div>
+                </div>
+            `;
+            milestonesContainer.innerHTML += milestoneHTML;
+            renderTasks(milestone.tasks, index);
+          });
+        }
+
+        function renderTasks(tasks, milestoneIndex) {
+          const tasksList = document.getElementById(
+            `tasks-list-${milestoneIndex}`
+          );
+          tasksList.innerHTML = '';
+          tasks.forEach((task, taskIndex) => {
+            const taskHTML = `
+                <li class="${
+                  task.status === 'completed' ? 'task-completed' : ''
+                }">
+                    ${task.title} 
+                    <button class="btn btn-sm btn-secondary" onclick="toggleTaskStatus(${milestoneIndex}, ${taskIndex})">Toggle</button>
+                </li>
+            `;
+            tasksList.innerHTML += taskHTML;
+          });
+        }
+
+        function calculateProgress(tasks) {
+          const completedTasks = tasks.filter(
+            (task) => task.status === 'completed'
+          ).length;
+          return (completedTasks / tasks.length) * 100 || 0;
+        }
+
+        function toggleMilestoneStatus(index) {
+          milestones[index].status =
+            milestones[index].status === 'completed'
+              ? 'in-progress'
+              : 'completed';
+          updateSessionStorage();
+          renderMilestones();
+        }
+
+        function toggleTaskStatus(milestoneIndex, taskIndex) {
+          milestones[milestoneIndex].tasks[taskIndex].status =
+            milestones[milestoneIndex].tasks[taskIndex].status === 'completed'
+              ? 'in-progress'
+              : 'completed';
+          updateSessionStorage();
+          renderMilestones();
+        }
+
+        milestoneForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+          const milestone = {
+            title: document.getElementById('milestone-title').value,
+            description: document.getElementById('milestone-description').value,
+            dueDate: document.getElementById('milestone-due-date').value,
+            status: 'in-progress',
+            tasks: [],
+          };
+          milestones.push(milestone);
+          updateSessionStorage();
+          renderMilestones();
+          document.getElementById('milestone-form').reset();
+          const modal = bootstrap.Modal.getInstance(
+            document.getElementById('milestoneModal')
+          );
+          modal.hide();
+        });
+
+        function updateSessionStorage() {
+          sessionStorage.setItem('milestones', JSON.stringify(milestones));
+        }
+
+        renderMilestones();
+      });
+    </script>
+  </body>
+</html>
